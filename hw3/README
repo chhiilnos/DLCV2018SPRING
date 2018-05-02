@@ -25,7 +25,7 @@ put training _sat.jpg and _mask.png in data/train
 the checkpoint should be in Models/model_name/
 
 inference :
-put testing _sat.jpg in data/validation/              
-> bash hw3.sh
-> bash hw3_best.sh
-the predicted masks should be in report/model_name/mask/
+put testing _sat.jpg in $1         
+> bash hw3.sh $1 $2
+> bash hw3_best.sh $1 $2
+the predicted masks should be in report/model_name/mask/ and $2
