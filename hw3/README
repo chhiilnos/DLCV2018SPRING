@@ -1,0 +1,25 @@
+.sh files :
+inf_eval.sh
+hw3.sh
+hw3_best.sh
+
+.py files :
+train.py
+inference.py
+models.py
+
+directories :
+weight : should contain vgg weight
+utils : .py files required for train.py, models.py, inference.py
+report : contain sub-directory with name being model names
+results : with sub-directory : validation
+data : with two sub-directories : train, validation
+data/train : should put training _sat.jpg and _mask.png, can be empty when testing
+data/validation : should put validation _sat.jpg and _mask.png
+Models : contain sub-directories with name being model names, in which checkpoint_weights.hdf5, model.json, logs/ are placed.
+
+inference & evaluate
+put testing _sat.jpg in data/validation/              
+> bash hw3.sh
+> bash hw3_best.sh
+the predicted masks should be in report/model_name/mask/
