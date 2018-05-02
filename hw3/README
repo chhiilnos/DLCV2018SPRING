@@ -18,7 +18,13 @@ data/train : should put training _sat.jpg and _mask.png, can be empty when testi
 data/validation : should put validation _sat.jpg and _mask.png
 Models : contain sub-directories with name being model names, in which checkpoint_weights.hdf5, model.json, logs/ are placed.
 
-inference & evaluate
+train :
+put training _sat.jpg and _mask.png in data/train
+> bash hw3_train.sh
+> bash hw3_best_train.sh
+the checkpoint should be in Models/model_name/
+
+inference :
 put testing _sat.jpg in data/validation/              
 > bash hw3.sh
 > bash hw3_best.sh
