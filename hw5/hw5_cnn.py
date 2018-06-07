@@ -26,7 +26,7 @@ parser.add_argument('--arch', '-a', metavar='ARCH', default='resnet50',
                     help='model architecture: ' +
                         ' | '.join(model_names) +
                         ' (default: resnet18)')
-parser.add_argument('-j', '--workers', default=4, type=int, metavar='N',
+parser.add_argument('-j', '--workers', default=32, type=int, metavar='N',
                     help='number of data loading workers (default: 4)')
 parser.add_argument('--epochs', default=200, type=int, metavar='N',
                     help='number of total epochs to run')
@@ -34,7 +34,7 @@ parser.add_argument('--nframe', default=16, type=int, metavar='N',
                     help='number of frames of a video')
 parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
                     help='manual epoch number (useful on restarts)')
-parser.add_argument('-b', '--batch_size', default=16, type=int,
+parser.add_argument('-b', '--batch_size', default=32, type=int,
                     metavar='N', help='mini-batch size (default: 256)')
 parser.add_argument('--lr', '--learning-rate', default=1e-2, type=float,
                     metavar='LR', help='initial learning rate')
@@ -42,7 +42,7 @@ parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
                     help='momentum')
 parser.add_argument('--weight-decay', '--wd', default=1e-5, type=float,
                     metavar='W', help='weight decay (default: 1e-4)')
-parser.add_argument('--print-freq', '-p', default=10, type=int,
+parser.add_argument('--print-freq', '-p', default=1, type=int,
                     metavar='N', help='print frequency (default: 10)')
 parser.add_argument('--resume', default='checkpoint_cnn_4.pth.tar', type=str, metavar='PATH',
                     help='path to latest checkpoint (default: none)')
@@ -230,6 +230,7 @@ def train(train_loader, model, criterion, optimizer, epoch):
 
     end = time.time()
     for i, (input, target) in enumerate(train_loader):
+        print(i, end=' ')
         # measure data loading time
         data_time.update(time.time() - end) 
         
@@ -237,15 +238,12 @@ def train(train_loader, model, criterion, optimizer, epoch):
         #print('about to inference model') 
         #print('input.shape={}'.format(input.shape)) 
         input = input.permute((0,1,4,2,3)) 
+        input = input.view(-1, input.shape[2], input.shape[3], input.shape[4])
         #print('input.shape={}'.format(input.shape)) 
-        output = torch.zeros((args.nframe,input.shape[0],11))
-        for f_id in range(args.nframe):
-          input_var = torch.squeeze(input[:,f_id,:,:,:],1)
-          #print('input_var.shape={}'.format(input_var.shape))
-          input_var = torch.autograd.Variable(input_var,requires_grad=False) 
-          #print('model(input_var).shape={}'.format(model(input_var).shape))
-          output[f_id,:,:] = model(input_var)
-        output = torch.mean(output,dim=0)
+        input_var = torch.autograd.Variable(input,requires_grad=False) 
+        pred = model(input_var)
+        pred = pred.view(-1, args.nframe, pred.shape[-1])
+        output = torch.mean(pred, dim=1)
         #print('output.shape={}'.format(output.shape))
         #print('after inference model')
 

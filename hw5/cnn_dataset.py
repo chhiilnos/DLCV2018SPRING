@@ -1,7 +1,7 @@
 import os
 import torch
 import torchvision.transforms as transforms
-import pickle
+import numpy as np
 
 class cnn_dataset():
     def __init__(self, path):
@@ -13,10 +13,10 @@ class cnn_dataset():
             self.length = 517
     
     def __getitem__(self, index): 
-        xy_file = open(os.path.join(self.path,str(index+1)+'.pkl'),'rb')
-        xy = pickle.load(xy_file)
-        #print(type(xy))
-        return xy
+        xy = np.load(os.path.join(self.path,str(index+1)+'.npy'))
+        x = torch.FloatTensor(xy[0]) / 255
+        y = xy[1]
+        return x, y
 
     def __len__(self):
         return self.length
