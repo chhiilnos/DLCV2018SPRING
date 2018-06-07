@@ -1,14 +1,17 @@
 import scipy.misc
-import os, cv2, random
+import os, random
 import shutil
 import numpy as np
 import scipy.misc
 import csv
 import time
 import skvideo.io
-import pickle as pkl
 import torch
 from skimage.io import imsave
+from multiprocessing import Pool
+
+LEN = 16
+
 '''
 remove original hw5_cnn 
 and creates hw5_cnn with :
@@ -42,13 +45,13 @@ def recreate_dir(dest_dir):
 def process_clip(video_path, nframe):
     frames = skvideo.io.vread(video_path)
     len_frames = frames.shape[0]
-    if(len_frames<16):
-      print('{}<16'.format(video_path))
+    if(len_frames<LEN):
+      print('{}<{}'.format(video_path, LEN))
     step = int((len_frames-1)/(nframe-1))
     index = np.array([step*i for i in range(nframe-1)]+[len_frames-1])
-    frames = frames[index,:,:] / 255
-    frames = torch.FloatTensor(frames)
-    #print(frames.shape)
+    frames = frames[index,:,:]
+    # frames = torch.FloatTensor(frames)
+    # print(frames.shape)
     return frames
   
 
@@ -63,6 +66,29 @@ hw5_cnn/train/0/OP01-R01-PastaSalad-66680-6813_1.png
 train can be train/valid
 0 can be 0,1,..,10
 '''
+def process(dat):
+  row = dat[0]
+  usage_path = dat[1]
+  nframe = dat[2]
+  dest_dir = dat[3]
+  i = dat[4]
+  video_index = row['Video_index']
+  video_name = row['Video_name']
+  video_category = row['Video_category']
+  label = row['Action_labels']
+  video_cat_path = os.path.join(usage_path,video_category)
+  video_names = [file for file in os.listdir(video_cat_path) if file.startswith(video_name)]
+  assert len(video_names) == 1
+  for video in video_names :
+    # video_path should be something like HW5_data/TrimmedVideos/video/train/OP01-R01-PastaSalad/OP01-R01-PastaSalad-66680-68130.......mp4
+    video_path = os.path.join(usage_path,video_category,video)
+    x = process_clip(video_path, nframe).astype(np.uint8)
+    y = int(label)
+    save_path = os.path.join(dest_dir,i,video_index)
+    np.save(save_path, (x, y))
+    # with open(save_path,'wb') as f:
+    #   pkl.dump((x,y),f)
+
 def data_to_frames(data_dir,dest_dir,nframe):
   # start time
   start_time = time.time()
@@ -78,28 +104,13 @@ def data_to_frames(data_dir,dest_dir,nframe):
     reader = csv.DictReader(open(csv_file,'r'))
     count = 0
 
-    for row in reader:
-      video_index = row['Video_index']
-      if(int(video_index)%20==0):
-        print(video_index)
-      video_name = row['Video_name']
-      video_category = row['Video_category']
-      label = row['Action_labels']
-      video_cat_path = os.path.join(usage_path,video_category)
-      video_names = [file for file in os.listdir(video_cat_path) if file.startswith(video_name)]
-      assert len(video_names) == 1
-      for video in video_names :
-        # video_path should be something like HW5_data/TrimmedVideos/video/train/OP01-R01-PastaSalad/OP01-R01-PastaSalad-66680-68130.......mp4
-        video_path = os.path.join(usage_path,video_category,video)
-        x = process_clip(video_path, nframe)
-        y = int(label)
-        save_path = os.path.join(dest_dir,i,video_index+'.pkl')
-        with open(save_path,'wb') as f:
-          pkl.dump((x,y),f)
+    rows = [(row, usage_path, nframe, dest_dir, i) for row in reader]
+    p = Pool(10)
+    p.map(process, rows)
 
   # end time
   elapsed_time = time.time() - start_time 
   print('Processing data to frame takes:', int(elapsed_time / 60), 'minutes')
  
 if __name__ == '__main__':
-  data_to_frames('HW5_data', 'hw5_cnn', 16) 
+  data_to_frames('HW5_data', 'hw5_cnn', LEN) 
